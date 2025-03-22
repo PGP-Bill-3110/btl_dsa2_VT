@@ -78,7 +78,7 @@ void InventoryManager::removeProduct(int index)
 
 
 //! tăng dần của cái gì
-List1D<string> InventoryManager::query(int attributeIndex, const double &minValue,
+/* List1D<string> InventoryManager::query(int attributeIndex, const double &minValue,
                                        const double &maxValue, int minQuantity, bool ascending) const
 {
     // TODO
@@ -128,7 +128,71 @@ List1D<string> InventoryManager::query(int attributeIndex, const double &minValu
 
     return result;
 
+} */
+
+
+List1D<string> InventoryManager::query(string attributeName, const double &minValue,
+                                       const double &maxValue, int minQuantity, bool ascending) const
+{
+    List1D<string> result;
+    List1D<double> attributeValues;
+
+    // Duyệt qua từng sản phẩm trong kho
+    for (int i = 0; i < attributesMatrix.rows(); i++) {
+        List1D<InventoryAttribute> productAttributes = attributesMatrix.getRow(i);
+
+        // Tìm thuộc tính có tên trùng với `attributeName`
+        for (int j = 0; j < productAttributes.size(); j++) {
+            InventoryAttribute attr = productAttributes.get(j);
+
+            if (attr.name == attributeName) { 
+                // Kiểm tra điều kiện giá trị thuộc tính và số lượng tồn kho
+                double attributeValue = attr.value;
+                int productQuantity = quantities.get(i);
+
+                if (attributeValue >= minValue && attributeValue <= maxValue &&
+                    productQuantity >= minQuantity) 
+                {
+                    result.add(productNames.get(i));
+                    attributeValues.add(attributeValue);
+                }
+                break;  // Thoát vòng lặp sau khi tìm thấy thuộc tính khớp
+            }
+        }
+    }
+
+    // Sắp xếp thủ công bằng Selection Sort
+    int n = result.size();
+    for (int i = 0; i < n - 1; i++) {
+        int targetIndex = i;
+        for (int j = i + 1; j < n; j++) {
+            if (ascending) {
+                if (attributeValues.get(j) < attributeValues.get(targetIndex)) {
+                    targetIndex = j;
+                }
+            } else {
+                if (attributeValues.get(j) > attributeValues.get(targetIndex)) {
+                    targetIndex = j;
+                }
+            }
+        }
+
+        // Hoán đổi dữ liệu trong List1D mà không dùng std::swap
+        if (targetIndex != i) {
+            string tempName = result.get(i);
+            double tempValue = attributeValues.get(i);
+
+            result.set(i, result.get(targetIndex));
+            attributeValues.set(i, attributeValues.get(targetIndex));
+
+            result.set(targetIndex, tempName);
+            attributeValues.set(targetIndex, tempValue);
+        }
+    }
+
+    return result;
 }
+
 
 
 void InventoryManager::removeDuplicates()
